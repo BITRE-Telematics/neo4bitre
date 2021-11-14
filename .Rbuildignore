@@ -1,0 +1,12 @@
+^CRAN-RELEASE$
+^tests_ignore$
+^README\.Rmd$
+^README\.md$
+^data-raw$
+^README$
+^CODE_OF_CONDUCT\.md$
+^readmefigs$
+^.*\.Rproj$
+^\.Rproj\.user$
+^LICENSE\.md$
+^\.travis\.yml$
