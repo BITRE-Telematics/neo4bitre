@@ -26,7 +26,8 @@ parse_row <- function(
   include_stats,
   stats,
   meta,
-  res_meta
+  res_meta,
+  keep_arrays
 ){
   # Type = row
   # Special case for handling arrays
@@ -52,7 +53,7 @@ parse_row <- function(
           }
           )
           names(x) = res_names
-          as_tibble(x)
+          as_tibble(x) %>% bind_rows()
         }
         )
     })
@@ -62,7 +63,13 @@ parse_row <- function(
       purrr::map_dfr(purrr::flatten_dfc) %>%
       list()
   }
-  if (length(res_data) != 0 && length(res_data) == length(res_names)){
+
+
+  if(!keep_arrays){
+    res = suppressMessages(bind_cols(res))
+  }
+
+  if (length(res_data) != 0 && length(res) == length(res_names)){
     res <- res %>%
       setNames(res_names)
   }
@@ -237,7 +244,7 @@ parse_graph <- function(
 #' @importFrom stats setNames
 #' @importFrom tibble tibble
 
-parse_api_results <- function(res, type, include_stats, meta, format, nested) {
+parse_api_results <- function(res, type, include_stats, meta, format, nested, keep_arrays) {
 
   # Get the content as an R list
   api_content <- content(res)
@@ -304,7 +311,8 @@ parse_api_results <- function(res, type, include_stats, meta, format, nested) {
           include_stats,
           stats,
           meta,
-          res_meta
+          res_meta,
+          keep_arrays
         )
       )
     }

@@ -45,7 +45,8 @@ call_neo4j <- function(query, con,
                        include_stats = FALSE,
                        include_meta = FALSE,
                        params = NULL,
-                       nested = FALSE) {
+                       nested = FALSE,
+                       keep_arrays = F) {
   # browser()
   stop_if_not(
     con, ~"Neo4JAPI" %in% class(.x),
@@ -100,7 +101,8 @@ call_neo4j <- function(query, con,
       type = type, format = format,
       include_stats = include_stats,
       meta = include_meta,
-      nested = nested
+      nested = nested,
+      keep_arrays = keep_arrays
     )
   }
 }

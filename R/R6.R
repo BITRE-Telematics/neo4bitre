@@ -127,7 +127,7 @@ neo4j_api <- R6::R6Class(
       #browser()
       self$endpointUp<-self$endpoint_up()
       if (self$endpointUp$status == TRUE) {
-      res<-self$ping_query %>% call_neo4j(self, type='row')
+      res<-self$ping_query %>% call_neo4j(self, type='row', keep_arrays = F)
       if (length(res$error_code)>0) return(FALSE)
       return(res$success$value)
       }
@@ -203,7 +203,7 @@ neo4j_api <- R6::R6Class(
         if (self$is_V4){
           savedb <- self$db
           self$db <- "system" # switch to system to get list of database and status
-          self$databases <- 'show databases' %>% call_neo4j(self,type="row")
+          self$databases <- 'show databases' %>% call_neo4j(self,type="row", output = 'raw')
           self$db <- savedb
           #TODO - make some sense of the database tibble
         }

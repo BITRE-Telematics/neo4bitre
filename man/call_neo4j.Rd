@@ -13,7 +13,8 @@ call_neo4j(
   include_stats = FALSE,
   include_meta = FALSE,
   params = NULL,
-  nested = FALSE
+  nested = FALSE,
+  keep_arrays = F
 )
 }
 \arguments{
