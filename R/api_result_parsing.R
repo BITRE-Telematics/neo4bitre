@@ -48,7 +48,7 @@ parse_row <- function(
             if(length(y) > 1){
               list(y)
             }else{
-              y
+              unlist(y)
             }
           }
           )
