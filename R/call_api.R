@@ -24,11 +24,12 @@ to_json_neo <- function(query, include_stats, meta, type, params) {
 #'
 #' @param query The cypher query
 #' @param con A NEO4JAPI connection object
-#' @param type Return the result as row or as graph
+#' @param type Return the result as row, graph or path.
 #' @param output Use "json" if you want the output to be printed as JSON
 #' @param include_stats tShould the stats about the transaction be included?
 #' @param include_meta tShould the stats about the transaction be included?
 #' @param params Parameters to pass along the query
+#' @param nested Whether to nest paths in seperate list elements
 #'
 #' @importFrom glue glue
 #' @importFrom attempt stop_if_not
@@ -43,7 +44,8 @@ call_neo4j <- function(query, con,
                        format = c("std", "table"),
                        include_stats = FALSE,
                        include_meta = FALSE,
-                       params = NULL) {
+                       params = NULL,
+                       nested = FALSE) {
   # browser()
   stop_if_not(
     con, ~"Neo4JAPI" %in% class(.x),
@@ -87,15 +89,18 @@ call_neo4j <- function(query, con,
   stop_if_not(status_code(res), ~.x == 200, "Neo4j API error")
   # return(res)
 
-  # Return the parsed output, to json or to R
+  # Return the parsed output, to json or to R or raw (debug)
   if (output == "json") {
     toJSON(lapply(content(res)$results, function(x) x$data), pretty = TRUE)
-  } else {
+  }else if (output == 'raw'){
+    return(res)
+  }else{
     parse_api_results(
       res = res,
       type = type, format = format,
       include_stats = include_stats,
-      meta = include_meta
+      meta = include_meta,
+      nested = nested
     )
   }
 }

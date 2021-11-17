@@ -37,12 +37,32 @@ parse_row <- function(
       purrr::transpose() %>%
       purrr::map(rbindlist_to_tibble)
   }, silent = TRUE)
+  ##to try and capture array variables as list columns
+  if (class(res)[1] == "try-error") {
+    res = attempt::attempt({
+      res = purrr::map_depth(res_data, 4, function(x){x}) %>%
+        purrr::map(purrr::flatten)  %>%
+        purrr::map(function(x){
+          x = map(x, function(y){
+            if(length(y) > 1){
+              list(y)
+            }else{
+              y
+            }
+          }
+          )
+          names(x) = res_names
+          as_tibble(x)
+        }
+        )
+    })
+  }
   if (class(res)[1] == "try-error") {
     res <- flatten(res_data) %>%
       purrr::map_dfr(purrr::flatten_dfc) %>%
       list()
   }
-  if (length(res_data) != 0){
+  if (length(res_data) != 0 && length(res_data) == length(res_names)){
     res <- res %>%
       setNames(res_names)
   }
@@ -60,13 +80,61 @@ parse_row <- function(
   return(res)
 }
 
-parse_graph <- function(
+##returns a list of lists of node tibbles, each a path
+parse_row_path <- function(
   res_data,
   res_names,
   include_stats,
   stats,
   meta,
   res_meta
+){
+  # Get the paths
+  paths = map_depth(res_data, 3, function(x){
+    x = map(x, function(y){
+      if(length(y) == 0){
+        return(NULL)
+      }else{
+        return(y)
+      }
+    })
+    return(compact(x))
+  })
+
+
+  # Should we include stats?
+  if (include_stats) {
+    res <- compact(
+      list(
+        paths= paths,
+        stats = stats
+      )
+    )
+    class(res) <- c("neo", class(res))
+  } else {
+    res <- compact(
+      list(
+        paths= paths
+      )
+    )
+    if (length(res) != 0) {
+      class(res) <- c("neo", class(res))
+    }
+  }
+  class(res) <- unique(class(res))
+  return(res)
+}
+
+
+
+parse_graph <- function(
+  res_data,
+  res_names,
+  include_stats,
+  stats,
+  meta,
+  res_meta,
+  nested
 ){
   # Get the graph sublist
   graph <- map(res_data, "graph")
@@ -87,26 +155,50 @@ parse_graph <- function(
 
   # Do something only if there are nodes
   if (length(nodes) != 0) {
-    # Tbl
-    nodes <- purrr::flatten(nodes)
-    nodes_tbl <- unique(tibble(
-      id = map_chr(nodes, ~.x$id),
-      label = map(nodes, ~as.character(.x$labels)),
-      properties = map(nodes, ~.x$properties)
-    ))
+    if(nested){
+      # Tbl
+      nodes_tbl <- purrr::map(nodes, function(p){
+        nodes <- unique(tibble(
+          id = map_chr(p, ~.x$id),
+          label = map(p, ~as.character(.x$labels)),
+          properties = map(p, ~.x$properties)
+        ))
+      }
+      )
+    }else{
+      # Tbl
+      nodes <- purrr::flatten(nodes)
+      nodes_tbl <- unique(tibble(
+        id = map_chr(nodes, ~.x$id),
+        label = map(nodes, ~as.character(.x$labels)),
+        properties = map(nodes, ~.x$properties)
+      ))
+    }
   }
 
   # Do something only if there are relations
   if (length(relations) != 0) {
-    # Tbl
-    relations <- flatten(relations)
-    relations_tbl <- unique(tibble(
-      id = as.character(map(relations, ~.x$id)),
-      type = as.character(map(relations, ~.x$type)),
-      startNode = as.character(map(relations, ~.x$startNode)),
-      endNode = as.character(map(relations, ~.x$endNode)),
-      properties = map(relations, ~.x$properties)
-    ))
+    if(nested){
+      relations_tbl <- purrr::map(relations, function(p){
+        relations <- unique(tibble(
+          id = as.character(map(p, ~.x$id)),
+          type = as.character(map(p, ~.x$type)),
+          startNode = as.character(map(p, ~.x$startNode)),
+          endNode = as.character(map(p, ~.x$endNode)),
+          properties = map(p, ~.x$properties)
+        ))
+      })
+    }else{
+      # Tbl
+      relations <- flatten(relations)
+      relations_tbl <- unique(tibble(
+        id = as.character(map(relations, ~.x$id)),
+        type = as.character(map(relations, ~.x$type)),
+        startNode = as.character(map(relations, ~.x$startNode)),
+        endNode = as.character(map(relations, ~.x$endNode)),
+        properties = map(relations, ~.x$properties)
+      ))
+    }
   }
 
   # Should we include stats?
@@ -135,6 +227,9 @@ parse_graph <- function(
   return(res)
 }
 
+
+
+
 #' @importFrom httr content
 #' @importFrom attempt stop_if
 #' @importFrom purrr flatten transpose modify_depth map map_df as_vector map_chr  compact flatten_dfr vec_depth
@@ -142,7 +237,7 @@ parse_graph <- function(
 #' @importFrom stats setNames
 #' @importFrom tibble tibble
 
-parse_api_results <- function(res, type, include_stats, meta, format) {
+parse_api_results <- function(res, type, include_stats, meta, format, nested) {
 
   # Get the content as an R list
   api_content <- content(res)
@@ -190,16 +285,29 @@ parse_api_results <- function(res, type, include_stats, meta, format) {
   })
 
   if (type == "row") {
-    return(
-      parse_row(
+    if(nested){
+      return(
+      parse_row_path(
         res_data,
         res_names,
         include_stats,
         stats,
         meta,
         res_meta
+        )
       )
-    )
+    }else{
+      return(
+        parse_row(
+          res_data,
+          res_names,
+          include_stats,
+          stats,
+          meta,
+          res_meta
+        )
+      )
+    }
   } else if (type == "graph") {
     return(
       parse_graph(
@@ -208,7 +316,8 @@ parse_api_results <- function(res, type, include_stats, meta, format) {
         include_stats,
         stats,
         meta,
-        res_meta
+        res_meta,
+        nested
       )
     )
   }

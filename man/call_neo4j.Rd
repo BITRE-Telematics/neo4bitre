@@ -12,7 +12,8 @@ call_neo4j(
   format = c("std", "table"),
   include_stats = FALSE,
   include_meta = FALSE,
-  params = NULL
+  params = NULL,
+  nested = FALSE
 )
 }
 \arguments{
@@ -20,7 +21,7 @@ call_neo4j(
 
 \item{con}{A NEO4JAPI connection object}
 
-\item{type}{Return the result as row or as graph}
+\item{type}{Return the result as row, graph or path.}
 
 \item{output}{Use "json" if you want the output to be printed as JSON}
 
@@ -29,6 +30,8 @@ call_neo4j(
 \item{include_meta}{tShould the stats about the transaction be included?}
 
 \item{params}{Parameters to pass along the query}
+
+\item{nested}{Whether to nest paths in seperate list elements}
 }
 \value{
 the result from the Neo4J Call

@@ -30,7 +30,7 @@ load_csv(
 
 \item{as}{the AS cypher arg}
 
-\item{type}{Return the result as row or as graph}
+\item{type}{Return the result as row, graph or path.}
 
 \item{output}{Use "json" if you want the output to be printed as JSON}
 

@@ -95,7 +95,8 @@ The `call_neo4j()` function takes several arguments :
   - `include_stats` : whether or not to include the stats about the call
   - `meta` : whether or not to include the meta arguments of the nodes
     when calling with “rows”
-
+  - `params` : a named list of parameters corresponding to those in the query
+  - `nested` : whether to return nested objects - particularly use full when trying to preserve individual paths with `type = 'graph` where it will return an object with two lists of equal length, each element corresponding to the nodes and relationships of each path
 ### The movie graph
 
 Starting at version 0.1.3, the `play_movie()` function returns the full
